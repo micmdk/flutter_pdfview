@@ -116,6 +116,10 @@ public class FlutterPDFView implements PlatformView, MethodCallHandler {
             case "updateSettings":
                 updateSettings(methodCall, result);
                 break;
+            case "width":
+                break;
+            case "height":
+                break;
             default:
                 result.notImplemented();
                 break;
@@ -163,6 +167,10 @@ public class FlutterPDFView implements PlatformView, MethodCallHandler {
                 case "preventLinkNavigation":
                     final PDFLinkHandler plh = (PDFLinkHandler) this.linkHandler;
                     plh.setPreventLinkNavigation(getBoolean(settings, key));
+                    break;
+                case "width":
+                    break;
+                case "height":
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown PDFView setting: " + key);

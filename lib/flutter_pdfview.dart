@@ -16,30 +16,31 @@ typedef LinkHandlerCallback = void Function(String uri);
 enum FitPolicy { WIDTH, HEIGHT, BOTH }
 
 class PDFView extends StatefulWidget {
-  const PDFView({
-    Key key,
-    this.filePath,
-    this.pdfData,
-    this.onViewCreated,
-    this.onRender,
-    this.onPageChanged,
-    this.onError,
-    this.onPageError,
-    this.onLinkHandler,
-    this.gestureRecognizers,
-    this.enableSwipe = true,
-    this.swipeHorizontal = false,
-    this.password,
-    this.nightMode = false,
-    this.autoSpacing = true,
-    this.pageFling = true,
-    this.pageSnap = true,
-    this.fitEachPage = true,
-    this.defaultPage = 0,
-    this.fitPolicy = FitPolicy.WIDTH,
-    this.preventLinkNavigation = false,
-  }) : assert(filePath != null || pdfData != null),
-       super(key: key);
+  const PDFView(
+      {Key key,
+      this.filePath,
+      this.pdfData,
+      this.onViewCreated,
+      this.onRender,
+      this.onPageChanged,
+      this.onError,
+      this.onPageError,
+      this.onLinkHandler,
+      this.gestureRecognizers,
+      this.enableSwipe = true,
+      this.swipeHorizontal = false,
+      this.password,
+      this.nightMode = false,
+      this.autoSpacing = true,
+      this.pageFling = true,
+      this.pageSnap = true,
+      this.fitEachPage = true,
+      this.defaultPage = 0,
+      this.fitPolicy = FitPolicy.WIDTH,
+      this.preventLinkNavigation = false,
+      this.size})
+      : assert(filePath != null || pdfData != null),
+        super(key: key);
 
   @override
   _PDFViewState createState() => _PDFViewState();
@@ -78,11 +79,11 @@ class PDFView extends StatefulWidget {
   final FitPolicy fitPolicy;
   final bool fitEachPage;
   final bool preventLinkNavigation;
+  final Size size;
 }
 
 class _PDFViewState extends State<PDFView> {
-  final Completer<PDFViewController> _controller =
-      Completer<PDFViewController>();
+  final Completer<PDFViewController> _controller = Completer<PDFViewController>();
   @override
   Widget build(BuildContext context) {
     if (defaultTargetPlatform == TargetPlatform.android) {
@@ -102,8 +103,7 @@ class _PDFViewState extends State<PDFView> {
         creationParamsCodec: const StandardMessageCodec(),
       );
     }
-    return Text(
-        '$defaultTargetPlatform is not yet supported by the pdfview_flutter plugin');
+    return Text('$defaultTargetPlatform is not yet supported by the pdfview_flutter plugin');
   }
 
   void _onPlatformViewCreated(int id) {
@@ -117,8 +117,7 @@ class _PDFViewState extends State<PDFView> {
   @override
   void didUpdateWidget(PDFView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _controller.future.then(
-        (PDFViewController controller) => controller._updateWidget(widget));
+    _controller.future.then((PDFViewController controller) => controller._updateWidget(widget));
   }
 }
 
@@ -166,7 +165,9 @@ class _PDFViewSettings {
       this.defaultPage,
       this.fitPolicy,
       this.fitEachPage,
-      this.preventLinkNavigation});
+      this.preventLinkNavigation,
+      this.width,
+      this.height});
 
   static _PDFViewSettings fromWidget(PDFView widget) {
     return _PDFViewSettings(
@@ -179,7 +180,9 @@ class _PDFViewSettings {
         pageSnap: widget.pageSnap,
         defaultPage: widget.defaultPage,
         fitPolicy: widget.fitPolicy,
-        preventLinkNavigation: widget.preventLinkNavigation);
+        preventLinkNavigation: widget.preventLinkNavigation,
+        width: widget.size.width,
+        height: widget.size.height);
   }
 
   final bool enableSwipe;
@@ -193,6 +196,8 @@ class _PDFViewSettings {
   final FitPolicy fitPolicy;
   final bool fitEachPage;
   final bool preventLinkNavigation;
+  final double width;
+  final double height;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -206,7 +211,9 @@ class _PDFViewSettings {
       'defaultPage': defaultPage,
       'fitPolicy': fitPolicy.toString(),
       'fitEachPage': fitEachPage,
-      'preventLinkNavigation': preventLinkNavigation
+      'preventLinkNavigation': preventLinkNavigation,
+      'width': width,
+      'height': height
     };
   }
 
@@ -223,6 +230,12 @@ class _PDFViewSettings {
     }
     if (preventLinkNavigation != newSettings.preventLinkNavigation) {
       updates['preventLinkNavigation'] = newSettings.preventLinkNavigation;
+    }
+    if (width != newSettings.width) {
+      updates['width'] = newSettings.width;
+    }
+    if (height != newSettings.height) {
+      updates['height'] = newSettings.height;
     }
     return updates;
   }
@@ -253,8 +266,7 @@ class PDFViewController {
         return null;
       case 'onPageChanged':
         if (_widget.onPageChanged != null) {
-          _widget.onPageChanged(
-              call.arguments['page'], call.arguments['total']);
+          _widget.onPageChanged(call.arguments['page'], call.arguments['total']);
         }
 
         return null;
@@ -277,8 +289,7 @@ class PDFViewController {
 
         return null;
     }
-    throw MissingPluginException(
-        '${call.method} was invoked but has no handler');
+    throw MissingPluginException('${call.method} was invoked but has no handler');
   }
 
   Future<int> getPageCount() async {
@@ -294,6 +305,14 @@ class PDFViewController {
   Future<bool> setPage(int page) async {
     final bool isSet = await _channel.invokeMethod('setPage', <String, dynamic>{
       'page': page,
+    });
+    return isSet;
+  }
+
+  Future<bool> setSize(Size size) async {
+    final bool isSet = await _channel.invokeMethod('setSize', <String, dynamic>{
+      'width': size.width,
+      'height': size.height,
     });
     return isSet;
   }

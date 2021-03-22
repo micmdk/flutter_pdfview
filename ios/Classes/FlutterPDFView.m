@@ -1,6 +1,7 @@
 // Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+#import <UIKit/UIKit.h>
 #import "FlutterPDFView.h"
 
 @implementation FLTPDFViewFactory {
@@ -49,12 +50,18 @@
         
         NSString* channelName = [NSString stringWithFormat:@"plugins.endigo.io/pdfview_%lld", viewId];
         _channel = [FlutterMethodChannel methodChannelWithName:channelName binaryMessenger:messenger];
-        
-        _pdfView = [[PDFView alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
-        __weak __typeof__(self) weakSelf = self;
+
+        CGRect bounds = [[UIScreen mainScreen] bounds];
+        double width = args[@"width"] != nil ? [args[@"width"] doubleValue] : bounds.size.width;
+        double height = args[@"height"] != nil ? [args[@"height"] doubleValue] : bounds.size.height;
+
+        _pdfView = [[PDFView alloc] initWithFrame:CGRectMake(0, 0, width, height)];
+        _pdfView.autoresizesSubviews = YES;
+        _pdfView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        _pdfView.backgroundColor = [UIColor colorWithWhite:0.95 alpha:1.0];
         _pdfView.delegate = self;
         
-        
+        __weak __typeof__(self) weakSelf = self;
         [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
             [weakSelf onMethodCall:call result:result];
         }];
@@ -81,9 +88,6 @@
         if (document == nil) {
             [_channel invokeMethod:@"onError" arguments:@{@"error" : @"cannot create document: File not in PDF format or corrupted."}];
         } else {
-            _pdfView.autoresizesSubviews = YES;
-            _pdfView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-            _pdfView.backgroundColor = [UIColor colorWithWhite:0.95 alpha:1.0];
             BOOL swipeHorizontal = [args[@"swipeHorizontal"] boolValue];
             if (swipeHorizontal) {
                 _pdfView.displayDirection = kPDFDisplayDirectionHorizontal;
@@ -95,19 +99,19 @@
             _pdfView.displayMode = enableSwipe ? kPDFDisplaySinglePageContinuous : kPDFDisplaySinglePage;
             _pdfView.document = document;
             _pdfView.autoScales = autoSpacing;
+            
             NSString* password = args[@"password"];
             if ([password isKindOfClass:[NSString class]] && [_pdfView.document isEncrypted]) {
                 [_pdfView.document unlockWithPassword:password];
             }
 
             NSUInteger pageCount = [document pageCount];
-
             if (pageCount <= defaultPage) {
                 defaultPage = pageCount - 1;
             }
 
-        PDFPage* page = [document pageAtIndex: defaultPage];
-        [_pdfView goToPage: page];
+            PDFPage* page = [document pageAtIndex: defaultPage];
+            [_pdfView goToPage: page];
 
             _pdfView.minScaleFactor = _pdfView.scaleFactorForSizeToFit;
             _pdfView.maxScaleFactor = 4.0;
